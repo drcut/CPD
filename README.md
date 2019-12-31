@@ -41,7 +41,7 @@ We learned a lot from the following projects when building CPD:
 - [QPyTorch](https://github.com/Tiiiger/QPyTorch): We use the same logic for intergrate our work with Pytorch.
 
 ## Team
-* Ruobing Han
+* [Ruobing Han](https://drcut.github.io/)
 * [Yang You](https://people.eecs.berkeley.edu/~youyang/)
 * [James Demmel](https://people.eecs.berkeley.edu/~demmel/)
 
