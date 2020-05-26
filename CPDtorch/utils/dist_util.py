@@ -1,6 +1,4 @@
 import torch
-import re
-import os
 import torch.distributed as dist
 from torch.nn import Module
 from ..quant import float_quantize
@@ -96,10 +94,11 @@ def broadcast_params(model):
     for p in model.state_dict().values():
         dist.broadcast(p, 0)
 
+
 def dist_init():
     num_gpus = torch.cuda.device_count()
-    torch.cuda.set_device(proc_id % num_gpus)
     dist.init_process_group(backend='nccl')
     rank = dist.get_rank()
+    torch.cuda.set_device(rank % num_gpus)
     world_size = dist.get_world_size()
     return rank, world_size

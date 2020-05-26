@@ -94,22 +94,22 @@ normalize = transforms.Normalize(mean, std)
 args.data = 'imagenet/'
 traindir = os.path.join(args.data, 'train')
 train_dataset = datasets.ImageFolder(
-                root=traindir,
-                transform=transforms.Compose([
-                            transforms.RandomResizedCrop(input_size),
-                            transforms.RandomHorizontalFlip(),
-                            transforms.ToTensor(),
-                            normalize,
-                ]))
+    root=traindir,
+    transform=transforms.Compose([
+        transforms.RandomResizedCrop(input_size),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        normalize,
+    ]))
 valdir = os.path.join(args.data, 'val')
 val_dataset = datasets.ImageFolder(
-                 root=valdir,
-                 transform=transforms.Compose([
-                                transforms.Resize(image_size),
-                                transforms.CenterCrop(input_size),
-                                transforms.ToTensor(),
-                                normalize,
-                ]))
+    root=valdir,
+    transform=transforms.Compose([
+        transforms.Resize(image_size),
+        transforms.CenterCrop(input_size),
+        transforms.ToTensor(),
+        normalize,
+    ]))
 kwargs = {'num_workers': 4, 'pin_memory': True} if args.cuda else {}
 
 train_sampler = torch.utils.data.distributed.DistributedSampler(
@@ -127,12 +127,12 @@ val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.val_batch_
 bn_params = [v for n, v in model.named_parameters() if 'bn' in n]
 rest_params = [v for n, v in model.named_parameters() if not 'bn' in n]
 
-optimizer = torch.optim.SGD([{'params': bn_params, 'weight_decay' : 0},
-                             {'params': rest_params, 'weight_decay' : args.wd}],
+optimizer = torch.optim.SGD([{'params': bn_params, 'weight_decay': 0},
+                             {'params': rest_params, 'weight_decay': args.wd}],
                             3.2,
                             momentum=args.momentum,
                             weight_decay=args.wd,
-                            nesterov = True)
+                            nesterov=True)
 
 model = DistModule(model)
 if resume_from_epoch > 0:
@@ -146,10 +146,10 @@ momentum_buffer = []
 for idx, master_p in enumerate(model.parameters()):
     momentum_buffer.append(torch.zeros_like(master_p))
 
+
 def train(epoch):
     model.train()
     train_sampler.set_epoch(epoch)
-
 
     with tqdm(total=len(train_loader),
               desc='Train Epoch     #{}'.format(epoch),
@@ -181,7 +181,8 @@ def train(epoch):
                 loss.backward()
                 for idx, param in enumerate(model.parameters()):
                     if param.grad is not None:
-                        grad_buffer[idx].append(param.grad.detach().clone().data)
+                        grad_buffer[idx].append(
+                            param.grad.detach().clone().data)
                 model.zero_grad()
             for idx, param in enumerate(model.parameters()):
                 if param.grad is not None:
@@ -190,7 +191,7 @@ def train(epoch):
                     max_exp = -100
                     for val in grad_buffer[idx]:
                         t_exp = torch.log2(
-                                torch.abs(val * args.emulate_node).max()).ceil().detach().cpu().numpy()
+                            torch.abs(val * args.emulate_node).max()).ceil().detach().cpu().numpy()
                         if t_exp > max_exp:
                             max_exp = t_exp
                     upper_bound = 2**(args.grad_exp-1) - 1
@@ -198,13 +199,16 @@ def train(epoch):
                     if max_exp == -100 or not args.use_APS:
                         shift_factor = 0
                     for grad in grad_buffer[idx]:
-                        grad.data.copy_(float_quantize(grad * (2**shift_factor),args.grad_exp,args.grad_man))
+                        grad.data.copy_(float_quantize(
+                            grad * (2**shift_factor), args.grad_exp, args.grad_man))
                     # as we use a single node to emulate multi-node, we should first accumulate gradients within a single node and then communicate them in the distributed system
                     res = torch.zeros_like(grad_buffer[idx][0])
                     for val in grad_buffer[idx]:
-                        res = float_quantize(res + val,args.grad_exp,args.grad_man)
+                        res = float_quantize(
+                            res + val, args.grad_exp, args.grad_man)
                     param.grad.data.copy_(res.data/(2**shift_factor))
-            sum_gradients(model,use_APS=args.use_APS,grad_exp=args.grad_exp, grad_man=args.grad_man)
+            sum_gradients(model, use_APS=args.use_APS,
+                          grad_exp=args.grad_exp, grad_man=args.grad_man)
 
             # Gradient is applied across all ranks
             optimizer.step()
@@ -213,6 +217,7 @@ def train(epoch):
                            'loss': train_loss.avg,
                            'accuracy': 100. * train_accuracy.avg})
             t.update(1)
+
 
 def validate(epoch):
     model.eval()
@@ -233,7 +238,8 @@ def validate(epoch):
                                'accuracy': 100. * val_accuracy.avg})
                 t.update(1)
     print("Epoch:{} val loss:{} val accuracy:{}".format(
-                epoch,val_loss.avg,val_accuracy.avg * 100.0))
+        epoch, val_loss.avg, val_accuracy.avg * 100.0))
+
 
 def adjust_learning_rate(epoch, batch_idx):
     lr = 3.2
@@ -251,7 +257,6 @@ def adjust_learning_rate(epoch, batch_idx):
         param_group['lr'] = lr
 
     return lr
-
 
 
 def accuracy(output, target):
