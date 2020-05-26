@@ -36,6 +36,7 @@ parser.add_argument('--grad_exp', default=5, type=int)
 parser.add_argument('--grad_man', default=2, type=int)
 parser.add_argument('--resume-opt', action='store_true')
 parser.add_argument('--use_lars', action='store_true')
+parser.add_argument('--use_APS', action='store_true')
 parser.add_argument('-e', '--evaluate', action='store_true')
 
 args = parser.parse_args()
@@ -212,10 +213,6 @@ def train(train_loader, val_loader, model, criterion,
 
         target = target.cuda()
         input_var = input.cuda()
-        if args.double:
-            input_var = input_var.double()
-        if args.half:
-            input_var = input_var.half()
 
         data_time.update(time.time() - end)
 
@@ -231,7 +228,7 @@ def train(train_loader, val_loader, model, criterion,
         if args.dist:
             sum_gradients(
                 model,
-                use_APS=True,
+                use_APS=args.use_APS,
                 grad_exp=args.grad_exp,
                 grad_man=args.grad_man)
 
@@ -323,10 +320,6 @@ def validate(val_loader, model, criterion):
 
         input = input.cuda()
         target = target.cuda()
-        if args.double:
-            input = input.double()
-        if args.half:
-            input = input.half()
 
         # compute output
         with torch.no_grad():
