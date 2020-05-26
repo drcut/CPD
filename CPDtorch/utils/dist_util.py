@@ -1,4 +1,6 @@
 import torch
+import re
+import os
 import torch.distributed as dist
 from torch.nn import Module
 from ..quant import float_quantize
@@ -42,6 +44,9 @@ def sum_gradients(model, use_APS=False, grad_exp=5, grad_man=2, use_kahan=False)
 
         for idx, param in enumerate(model.parameters()):
             param.grad.copy_(param.grad.data/(2**shift_factor[idx]))
+    else:
+        normal_sum_gradients(model, grad_exp, grad_man)
+        return
 
 
 def normal_sum_gradients(model, grad_exp=8, grad_man=23):
@@ -90,3 +95,11 @@ def kahan_sum_gradients(model, grad_exp=8, grad_man=23):
 def broadcast_params(model):
     for p in model.state_dict().values():
         dist.broadcast(p, 0)
+
+def dist_init():
+    num_gpus = torch.cuda.device_count()
+    torch.cuda.set_device(proc_id % num_gpus)
+    dist.init_process_group(backend='nccl')
+    rank = dist.get_rank()
+    world_size = dist.get_world_size()
+    return rank, world_size
