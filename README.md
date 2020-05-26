@@ -29,10 +29,6 @@ ln -s $PATH_of_this_repo/CPDtorch $PATH_of_your_project/CPDtorch
 ```
 
 
-## Examples
-We use our large batch low-precision experiment's code as example. 
-
-- [Distributed Low Precision examples](https://github.com/drcut/customized_precision_test)
 
 
 ## Acknowledgement

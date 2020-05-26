@@ -1,0 +1,16 @@
+common:
+    arch: res_cifar
+    workers: 4
+    batch_size: 512
+
+    max_epoch: 100
+    base_lr: 0.1
+    lr_steps: [3000, 6000, 9000]
+    lr_mults: [0.1, 0.1, 0.1]
+
+    momentum: 0.9
+    weight_decay: 0.0001
+
+    val_freq: 50
+    print_freq: 50
+    save_path: cifar/res18
