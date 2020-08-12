@@ -1,6 +1,6 @@
-#include "quant_cuda.h"
 #include "quant_kernel.h"
-#include <ATen/ATen.h>
+//#include <ATen/ATen.h>
+#include <torch/types.h>
 #include <climits>
 #include <cstdlib>
 #include <cuda.h>
@@ -11,7 +11,7 @@
 
 using namespace at;
 
-Tensor float_quantize_nearest_cuda(Tensor a, int man_bits, int exp_bits) {
+torch::Tensor float_quantize_nearest_cuda(torch::Tensor a, int man_bits, int exp_bits) {
   // use external random number right now
   auto o = zeros_like(a);
   int size = a.numel();
@@ -24,7 +24,7 @@ Tensor float_quantize_nearest_cuda(Tensor a, int man_bits, int exp_bits) {
   // return o;
 }
 
-void float_quantize_gemm_cuda(Tensor a, Tensor b, Tensor c, int M, int N, int K,
+void float_quantize_gemm_cuda(torch::Tensor a, torch::Tensor b, torch::Tensor c, int M, int N, int K,
                               int man_bits, int exp_bits) {
   // use external random number right now
   dim3 grid_size;

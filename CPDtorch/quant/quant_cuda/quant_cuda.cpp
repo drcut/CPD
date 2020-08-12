@@ -1,5 +1,6 @@
 #include "quant_cuda.h"
-#include <torch/torch.h>
+#include <torch/extension.h>
+#include <torch/types.h>
 #include <tuple>
 
 using namespace at;
@@ -11,13 +12,13 @@ using namespace at;
   CHECK_CUDA(x);                                                               \
   CHECK_CONTIGUOUS(x)
 
-Tensor float_quantize_nearest(Tensor a, int man_bits, int exp_bits) {
+torch::Tensor float_quantize_nearest(torch::Tensor a, int man_bits, int exp_bits) {
   CHECK_INPUT(a);
   return float_quantize_nearest_cuda(a, man_bits, exp_bits);
 }
 
-void float_quantize_gemm(Tensor a, Tensor b, Tensor c, int M, int N, int K,
-                         int man_bits, int exp_bits) {
+void float_quantize_gemm(torch::Tensor a, torch::Tensor b, torch::Tensor c, 
+                         int M, int N, int K, int man_bits, int exp_bits) {
   CHECK_INPUT(a);
   CHECK_INPUT(b);
   CHECK_INPUT(c);
@@ -32,3 +33,4 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
   m.def("float_quantize_gemm", &float_quantize_gemm,
         "Low-Bitwidth Floating Point Number GEMM Quantization (CUDA)");
 }
+
