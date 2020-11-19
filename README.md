@@ -69,6 +69,21 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist 
 python draw_curve.py
 ```
 
+## Step by Step Instructions
+### ResNet18
+Following the above command, users can run other experiments with different setting.
+```bash
+# Run 4 bits (exp: 3bit man: 0bit) with APS
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist --grad_exp 3 --grad_man 0 --use_APS
+
+# Run 8 bits (exp: 4bit man: 3bit) with APS using LARS algorithm
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist --grad_exp 4 --grad_man 3 --use_APS --use_lars
+
+# Run 8 bits (exp: 4bit man: 3bit) with APS using the Kahan summation algorithm
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist --grad_exp 4 --grad_man 3 --use_APS --use_kahan
+```
+Please feel free to try using different combinations of w/o APS, w/o Kahan, w/o Lars and different precisions to run the experiments
+
 ## Acknowledgement
 We learned a lot from the following projects when building CPD:
 
