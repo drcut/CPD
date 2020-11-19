@@ -10,26 +10,64 @@ CPD can support the following operation:
 - Using customized-precision floating point as mid-result while do all-reduce operation
 - Using Kahan accumulation algorithm while accumulation
 
-*Note*: Besides customized-precision, we also implement a **high performance general** GEMM function for CUDA,
-as we noticed there isn't an open source GEMM implemention which are high performance for general case (with random M, N and K),
-except cuTLASS, which are too complex to modify.
- Researchers can use them with IEEE single floating points.
+## Requirements
 
-## Installation
-
-requirements:
-
+- System: Ubuntu16.04
 - Python >= 3.6
 - PyTorch >= 0.4.1
+- CUDA >= 9.0
+- (Optional) Slurm Workload Manager for the distributed system (If your distrbuted system use other Manager, please implement the function *dist_init* in *CPDtorch/utils/dist_util.py*)
+- Dataset: Cifar10 (for DavidNet and ResNet18) and ImageNet (for ResNet50)
 
 
-Install CPD is quite easy, just link the CPDtorch file with your project:
+## Get Started
+Run ResNet18 with/without APS for 8 bits in a 8 node distributed system
+
+*NOTE: Please modify the platform name ('Test') for your own system*
 ```bash
-ln -s $PATH_of_this_repo/CPDtorch $PATH_of_your_project/CPDtorch
+# Download code
+git clone -b artifact https://github.com/drcut/CPD
+
+# Install CPD
+cd CPD/example/ResNet18
+ln -s ../../CPDtorch CPDtorch
+
+# Before run the code, please prepare CIFAR10 dataset and put it into data folder, just like below
+'''
+.
+├── configs
+│   └── res18_cifar.yaml
+├── CPDtorch -> ../../CPDtorch
+├── data
+    ├── cifar-10-batches-py
+    │   ├── batches.meta
+    │   ├── data_batch_1
+    │   ├── data_batch_2
+    │   ├── data_batch_3
+    │   ├── data_batch_4
+    │   ├── data_batch_5
+    │   ├── readme.html
+    │   └── test_batch
+    └── cifar-10-python.tar.gz
+├── models
+│   ├── __init__.py
+│   └── resnet18_cifar.py
+├── tools
+│   └── mix.py
+└── utils
+    ├── __init__.py
+    └── train_util.py
+'''
+
+# Run ResNet18 for 8 bits (exp: 4bit man: 3bit) without APS
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist --grad_exp 4 --grad_man 3 | tee no_aps.log
+
+# Run ResNet18 for 8 bits (exp: 4bit man: 3bit) with APS
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist --grad_exp 4 --grad_man 3 --use_APS | tee aps.log
+
+# (Optional) Visualize the experiments results
+python draw_curve.py
 ```
-
-
-
 
 ## Acknowledgement
 We learned a lot from the following projects when building CPD:
@@ -40,4 +78,5 @@ We learned a lot from the following projects when building CPD:
 * [Ruobing Han](https://drcut.github.io/)
 * [Yang You](https://people.eecs.berkeley.edu/~youyang/)
 * [James Demmel](https://people.eecs.berkeley.edu/~demmel/)
+
 
