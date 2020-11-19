@@ -44,7 +44,10 @@ def sum_gradients(model, use_APS=False, grad_exp=5, grad_man=2, use_kahan=False)
         for idx, param in enumerate(model.parameters()):
             param.grad.copy_(param.grad.data/(2**shift_factor[idx]))
     else:
-        normal_sum_gradients(model, grad_exp, grad_man)
+        if use_kahan:
+            kahan_sum_gradients(model, grad_exp, grad_man)
+        else:
+            normal_sum_gradients(model, grad_exp, grad_man)
         return
 
 
@@ -67,11 +70,6 @@ def normal_sum_gradients(model, grad_exp=8, grad_man=23):
 
 
 def kahan_sum_gradients(model, grad_exp=8, grad_man=23):
-    if grad_exp == 8 and grad_man == 23:
-        for _, param in model.named_parameters():
-            if param.requires_grad:
-                dist.all_reduce(param.grad.data)
-        return
     for param in model.parameters():
         if param.requires_grad:
             gather_t = [torch.ones_like(param)

@@ -37,6 +37,7 @@ parser.add_argument('--grad_man', default=2, type=int)
 parser.add_argument('--resume-opt', action='store_true')
 parser.add_argument('--use_lars', action='store_true')
 parser.add_argument('--use_APS', action='store_true')
+parser.add_argument('--use_kahan', action='store_true')
 parser.add_argument('-e', '--evaluate', action='store_true')
 
 args = parser.parse_args()
@@ -229,6 +230,7 @@ def train(train_loader, val_loader, model, criterion,
             sum_gradients(
                 model,
                 use_APS=args.use_APS,
+                use_kahan=args.use_kahan,
                 grad_exp=args.grad_exp,
                 grad_man=args.grad_man)
 
