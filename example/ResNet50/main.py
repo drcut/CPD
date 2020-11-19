@@ -54,10 +54,6 @@ parser.add_argument("--grad_man", type=int)
 
 args = parser.parse_args()
 args.cuda = not args.no_cuda and torch.cuda.is_available()
-args.train_root = 'imagenet/train'
-args.train_source = 'imagenet/meta/train.txt'
-args.val_root = 'imagenet/val'
-args.val_source = 'imagenet/meta/val.txt'
 
 allreduce_batch_size = args.batch_size * args.emulate_node
 
@@ -142,11 +138,6 @@ if resume_from_epoch > 0:
     optimizer.load_state_dict(checkpoint['optimizer'])
 
 
-momentum_buffer = []
-for idx, master_p in enumerate(model.parameters()):
-    momentum_buffer.append(torch.zeros_like(master_p))
-
-
 def train(epoch):
     model.train()
     train_sampler.set_epoch(epoch)
@@ -194,19 +185,21 @@ def train(epoch):
                             torch.abs(val * args.emulate_node).max()).ceil().detach().cpu().numpy()
                         if t_exp > max_exp:
                             max_exp = t_exp
-                    upper_bound = 2**(args.grad_exp-1) - 1
+                    upper_bound = 2**(args.grad_exp - 1) - 1
                     shift_factor = upper_bound - max_exp
                     if max_exp == -100 or not args.use_APS:
                         shift_factor = 0
                     for grad in grad_buffer[idx]:
                         grad.data.copy_(float_quantize(
                             grad * (2**shift_factor), args.grad_exp, args.grad_man))
-                    # as we use a single node to emulate multi-node, we should first accumulate gradients within a single node and then communicate them in the distributed system
+                    # as we use a single node to emulate multi-node, we should
+                    # first accumulate gradients within a single node and then
+                    # communicate them in the distributed system
                     res = torch.zeros_like(grad_buffer[idx][0])
                     for val in grad_buffer[idx]:
                         res = float_quantize(
                             res + val, args.grad_exp, args.grad_man)
-                    param.grad.data.copy_(res.data/(2**shift_factor))
+                    param.grad.data.copy_(res.data / (2**shift_factor))
             sum_gradients(model, use_APS=args.use_APS,
                           grad_exp=args.grad_exp, grad_man=args.grad_man)
 
@@ -246,7 +239,7 @@ def adjust_learning_rate(epoch, batch_idx):
     if epoch <= args.warmup_epochs:
         epoch += float(batch_idx + 1) / len(train_loader)
         final_lr = 3.2
-        lr = 0.1 + (float(epoch-1)/args.warmup_epochs) * (final_lr - 0.1)
+        lr = 0.1 + (float(epoch - 1) / args.warmup_epochs) * (final_lr - 0.1)
     if epoch > 30:
         lr *= 0.1
     if epoch > 60:
@@ -292,7 +285,7 @@ class Metric(object):
         return self.sum / self.n
 
 
-for epoch in range(resume_from_epoch+1, args.epochs+1):
+for epoch in range(resume_from_epoch + 1, args.epochs + 1):
     train(epoch)
     validate(epoch)
     save_checkpoint(epoch)
