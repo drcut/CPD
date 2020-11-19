@@ -16,8 +16,9 @@ CPD can support the following operation:
 - Python >= 3.6
 - PyTorch >= 0.4.1
 - CUDA >= 9.0
+- Ninja >= 1.10.0
+- Dataset: CIFAR10 (for DavidNet and ResNet18) and ImageNet (for ResNet50)
 - (Optional) Slurm Workload Manager for the distributed system (If your distrbuted system use other Manager, please implement the function *dist_init* in *CPDtorch/utils/dist_util.py*. This function should assign an unique device for each process and return the global rank and world size for this process)
-- Dataset: Cifar10 (for DavidNet and ResNet18) and ImageNet (for ResNet50)
 
 
 ## Get Started
