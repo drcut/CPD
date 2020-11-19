@@ -84,6 +84,22 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist 
 ```
 Please feel free to try using different combinations of w/o APS, w/o Kahan, w/o Lars and different precisions to run the experiments
 
+### ResNet50
+*For an 8 V100 distrbuted system, it may take more than 30 hour for 90 epochs training*
+```bash
+# Install CPD
+cd CPD/example/ResNet50
+ln -s ../../CPDtorch CPDtorch
+
+# Prepare ImageNet data, you should modify args.data in main.py
+
+# Run ResNet50 with 8 bit (exp: 5bit, man: 2bit) with APS in a 8 node distributed system
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u main.py --grad_exp 5 --grad_man 2 --use-APS
+
+# If you only have 8 node, but want to emulate the experiments for a 256 node system. That means you should use a node to emulate 256/8=32 nodes. So set emulate-node as 32
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u main.py --grad_exp 5 --grad_man 2 --use-APS --emulate-node 32
+```
+
 ## Acknowledgement
 We learned a lot from the following projects when building CPD:
 
