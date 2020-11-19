@@ -10,15 +10,23 @@ CPD can support the following operation:
 - Using customized-precision floating point as mid-result while do all-reduce operation
 - Using Kahan accumulation algorithm while accumulation
 
+*Note*: Besides customized-precision, we also implement a **high performance general** GEMM function for CUDA,
+as we noticed there isn't an open source GEMM implemention which are high performance for general case (with random M, N and K),
+except cuTLASS, which are too complex to modify.
+ Researchers can use them with IEEE single floating points.
+
+
+
 ## Requirements
 
 - System: Ubuntu16.04
 - Python >= 3.6
 - PyTorch >= 0.4.1
 - CUDA >= 9.0
-- Ninja >= 1.10.0
-- Dataset: CIFAR10 (for DavidNet and ResNet18) and ImageNet (for ResNet50)
+- MMCV >= 1.1.3 (Only for segmentation model, like FCN)
+- MMSegmentation >= 0.6.0 (Only for segmentation model, like FCN)
 - (Optional) Slurm Workload Manager for the distributed system (If your distrbuted system use other Manager, please implement the function *dist_init* in *CPDtorch/utils/dist_util.py*. This function should assign an unique device for each process and return the global rank and world size for this process)
+- Dataset: Cifar10 (for DavidNet and ResNet18) and ImageNet (for ResNet50)
 
 
 ## Get Started
@@ -28,17 +36,16 @@ Run ResNet18 with/without APS for 8 bits in a 8 node distributed system
 ```bash
 # Download code
 git clone -b artifact https://github.com/drcut/CPD
-
 # Install CPD
-cd CPD/example/ResNet18
-ln -s ../../CPDtorch CPDtorch
+export PYTHONPATH=`pwd`/CPD:$PYTHONPATH
 
+# Run ResNet18
+cd CPD/example/ResNet18
 # Before run the code, please prepare CIFAR10 dataset and put it into data folder, just like below
 '''
 .
 ├── configs
 │   └── res18_cifar.yaml
-├── CPDtorch -> ../../CPDtorch
 ├── data
     ├── cifar-10-batches-py
     │   ├── batches.meta
@@ -85,14 +92,12 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist 
 ```
 Please feel free to try using different combinations of w/o APS, w/o Kahan, w/o Lars and different precisions to run the experiments
 
-
 ### DavidNet
 ```bash
 cd CPD/example/DavidNet
 # use the same way to install CPDtorch and prepare CIFAR10 dataset.Your folder should like the below case
 '''
-.
-├── CPDtorch -> ../../CPDtorch         
+.      
 ├── data -> ../ResNet18/data                                            
 ├── davidnet.py                                                         
 ├── dawn.py                                        
@@ -109,7 +114,6 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u dawn.py --grad_exp 5
 ```bash
 # Install CPD
 cd CPD/example/ResNet50
-ln -s ../../CPDtorch CPDtorch
 
 # Prepare ImageNet data, you should modify args.data in main.py
 
@@ -119,6 +123,21 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u main.py --grad_exp 5
 # If you only have 8 node, but want to emulate the experiments for a 256 node system. That means you should use a node to emulate 256/8=32 nodes. So set emulate-node as 32
 srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u main.py --grad_exp 5 --grad_man 2 --use-APS --emulate-node 32
 ```
+
+### FCN
+*For an 8 V100 distributed system, it may take more than 20 hour for 40K iteration*
+```bash
+# Donwload MMCV for APS
+git clone -b APS_support https://github.com/drcut/mmcv
+# Build MMCV following the official link: 
+# https://github.com/open-mmlab/mmcv#installation
+# Build MMSeg following the official link: 
+# https://github.com/open-mmlab/mmsegmentation/blob/master/docs/install.md
+
+# Run FCN according to instructions in : https://github.com/open-mmlab/mmsegmentation/blob/master/docs/getting_started.md#train-with-multiple-gpus
+```
+
+
 
 ## Acknowledgement
 We learned a lot from the following projects when building CPD:

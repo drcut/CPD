@@ -16,7 +16,6 @@ from torch.utils.data import distributed
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-from CPDtorch.quant import float_quantize
 
 torch.backends.cudnn.benchmark = True
 np.random.seed(2)
@@ -194,7 +193,6 @@ class Mul(nn.Module):
 
     def __call__(self, x):
         return x * self.weight
-        # return float_quantize(x*self.weight,exp=8,man=23)
 
 
 class Flatten(nn.Module):
@@ -203,7 +201,6 @@ class Flatten(nn.Module):
 
 class Add(nn.Module):
     def forward(self, x, y): return x + y
-    # def forward(self, x, y): return float_quantize(x + y,exp=8,man=23)
 
 
 class Concat(nn.Module):
