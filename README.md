@@ -84,6 +84,25 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist 
 ```
 Please feel free to try using different combinations of w/o APS, w/o Kahan, w/o Lars and different precisions to run the experiments
 
+
+### DavidNet
+```bash
+cd CPD/example/DavidNet
+# use the same way to install CPDtorch and prepare CIFAR10 dataset.Your folder should like the below case
+'''
+.
+├── CPDtorch -> ../../CPDtorch         
+├── data -> ../ResNet18/data                                            
+├── davidnet.py                                                         
+├── dawn.py                                        
+├── train_utils.py                                                      
+├── use_aps.log                                                          
+└── utils.py
+'''
+# Run 8 bits (exp: 5bit man: 2bit) with APS
+srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u dawn.py --grad_exp 5 --grad_man 2 --use_APS
+```
+
 ### ResNet50
 *For an 8 V100 distrbuted system, it may take more than 30 hour for 90 epochs training*
 ```bash
