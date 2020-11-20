@@ -145,6 +145,12 @@ pip install --user -e .
 GPUS=8 GPUS_PER_NODE=8 CPUS_PER_TASK=1 bash tools/slurm_train.sh Test no_APS_4_3 configs/fcn/fcn_r50-d8_769x769_40k_cityscapes.py
 ```
 
+## Claims from the paper supported by the artifact
+In our artifact, we can verify that using APS, we can improve the testing accuracies when distributed training with low precision gradient in several models (DavidNet, ResNet18, FCN, ResNet50). Users can further test other models easily using our framework.
+
+##  Claims from the paper not supported by the artifact
+As CPD is an emulator for low precision training, we actual use IEEE FP32 in out training. So this means we can not show the performance improvement in this artifact. However, we are designing a new computer architecture with a startup company for APS. With this kind of architecture, we can gain speedup by using APS with low precision.
+
 
 ## Acknowledgement
 We learned a lot from the following projects when building CPD:
