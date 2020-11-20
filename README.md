@@ -131,12 +131,19 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u main.py --grad_exp 5
 git clone -b APS_support https://github.com/drcut/mmcv
 # Build MMCV following the official link: 
 # https://github.com/open-mmlab/mmcv#installation
+cd mmcv
+MMCV_WITH_OPS=1 pip install --user -e .
 # Build MMSeg following the official link: 
 # https://github.com/open-mmlab/mmsegmentation/blob/master/docs/install.md
+cd ..
+git clone -b v0.5.0 https://github.com/open-mmlab/mmsegmentation
+cd mmsegmentation
+pip install --user -e .
 
 # Run FCN according to instructions in : https://github.com/open-mmlab/mmsegmentation/blob/master/docs/getting_started.md#train-with-multiple-gpus
+# Please modify the code in line 27th mmcv/runner/hooks/optimizer.py for different precision and open/close APS
+GPUS=8 GPUS_PER_NODE=8 CPUS_PER_TASK=1 bash tools/slurm_train.sh Test no_APS_4_3 configs/fcn/fcn_r50-d8_769x769_40k_cityscapes.py
 ```
-
 
 
 ## Acknowledgement
