@@ -130,17 +130,26 @@ def main():
 
     args.max_iter = math.ceil((dataset_len * args.max_epoch) /
                               (world_size * args.batch_size * emulate_node))
-    train_sampler = DistributedGivenIterationSampler(train_dataset,
-                                                     args.max_iter *
-                                                     emulate_node,
-                                                     args.batch_size,
-                                                     world_size=world_size,
-                                                     rank=rank,
-                                                     last_iter=last_iter)
-    val_sampler = DistributedSampler(val_dataset,
-                                     world_size=world_size,
-                                     rank=rank,
-                                     round_up=False)
+    if args.dist:
+        train_sampler = DistributedGivenIterationSampler(train_dataset,
+                                                         args.max_iter *
+                                                         emulate_node,
+                                                         args.batch_size,
+                                                         last_iter=last_iter)
+        val_sampler = DistributedSampler(val_dataset,
+                                         round_up=False)
+    else:
+        train_sampler = DistributedGivenIterationSampler(train_dataset,
+                                                         args.max_iter *
+                                                         emulate_node,
+                                                         args.batch_size,
+                                                         world_size=world_size,
+                                                         rank=rank,
+                                                         last_iter=last_iter)
+        val_sampler = DistributedSampler(val_dataset,
+                                         world_size=world_size,
+                                         rank=rank,
+                                         round_up=False)
 
     train_loader = DataLoader(train_dataset,
                               batch_size=args.batch_size,
