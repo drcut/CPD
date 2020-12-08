@@ -20,7 +20,6 @@ def simple_group_split(world_size, rank, num_groups):
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
-
     def __init__(self, length=0):
         self.length = length
         self.reset()
@@ -49,7 +48,7 @@ class AverageMeter(object):
             self.avg = self.sum / self.count
 
 
-def accuracy(output, target, topk=(1,)):
+def accuracy(output, target, topk=(1, )):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
     batch_size = target.size(0)
@@ -68,8 +67,8 @@ def accuracy(output, target, topk=(1,)):
 
 class IterLRScheduler(object):
     def __init__(self, optimizer, milestones, lr_mults, last_iter=-1):
-        assert len(milestones) == len(
-            lr_mults), "{} vs {}".format(milestone, lr_mults)
+        assert len(milestones) == len(lr_mults), "{} vs {}".format(
+            milestone, lr_mults)
         self.milestones = milestones
         self.lr_mults = lr_mults
         if not isinstance(optimizer, torch.optim.Optimizer):
@@ -78,8 +77,9 @@ class IterLRScheduler(object):
         self.optimizer = optimizer
         for i, group in enumerate(optimizer.param_groups):
             if 'lr' not in group:
-                raise KeyError("param 'lr' is not specified "
-                               "in param_groups[{}] when resuming an optimizer".format(i))
+                raise KeyError(
+                    "param 'lr' is not specified "
+                    "in param_groups[{}] when resuming an optimizer".format(i))
         self.last_iter = last_iter
 
     def _get_lr(self):
@@ -91,18 +91,19 @@ class IterLRScheduler(object):
         except BaseException:
             raise Exception('wtf?')
         return list(
-            map(lambda group: group['lr'] * self.lr_mults[pos], self.optimizer.param_groups))
+            map(lambda group: group['lr'] * self.lr_mults[pos],
+                self.optimizer.param_groups))
 
     def get_lr(self):
-        return list(
-            map(lambda group: group['lr'], self.optimizer.param_groups))
+        return list(map(lambda group: group['lr'],
+                        self.optimizer.param_groups))
 
     def step(self, this_iter=None):
         if this_iter is None:
             this_iter = self.last_iter + 1
         self.last_iter = this_iter
-        for param_group, lr in zip(
-                self.optimizer.param_groups, self._get_lr()):
+        for param_group, lr in zip(self.optimizer.param_groups,
+                                   self._get_lr()):
             param_group['lr'] = lr
 
 
@@ -156,8 +157,13 @@ class GivenIterationSampler(Sampler):
 
 
 class DistributedGivenIterationSampler(Sampler):
-    def __init__(self, dataset, total_iter, batch_size,
-                 world_size=None, rank=None, last_iter=-1):
+    def __init__(self,
+                 dataset,
+                 total_iter,
+                 batch_size,
+                 world_size=None,
+                 rank=None,
+                 last_iter=-1):
         if world_size is None:
             world_size = dist.get_world_size()
         else:
@@ -217,7 +223,6 @@ class DistributedGivenIterationSampler(Sampler):
 
 
 class DistributedSampler(Sampler):
-
     def __init__(self, dataset, world_size=None, rank=None, round_up=True):
         if world_size is None:
             world_size = dist.get_world_size()
@@ -247,8 +252,8 @@ class DistributedSampler(Sampler):
 
         offset = self.num_samples * self.rank
         indices = indices[offset:offset + self.num_samples]
-        if self.round_up or (
-                not self.round_up and self.rank < self.world_size - 1):
+        if self.round_up or (not self.round_up
+                             and self.rank < self.world_size - 1):
             assert len(indices) == self.num_samples
 
         return iter(indices)
@@ -269,6 +274,7 @@ def save_checkpoint(state, is_best, filename):
 def load_state(path, model, optimizer=None):
     def map_func(storage, location):
         return storage.cuda()
+
     if os.path.isfile(path):
         print("=> loading checkpoint '{}'".format(path))
         #checkpoint = torch.load(path, map_location=map_func)
@@ -279,8 +285,8 @@ def load_state(path, model, optimizer=None):
         # if model is dist
         if list(model.state_dict().keys())[0].startswith("module."):
             # ckpt is not dist
-            if not list(checkpoint['state_dict'].keys())[
-                    0].startswith("module."):
+            if not list(
+                    checkpoint['state_dict'].keys())[0].startswith("module."):
                 # add module
                 tmp = {}
                 for k, v in checkpoint['state_dict'].items():
@@ -297,15 +303,16 @@ def load_state(path, model, optimizer=None):
         own_keys = set(model.state_dict().keys())
         missing_keys = own_keys - ckpt_keys
         for k in missing_keys:
-            print('caution: missing keys from checkpoint {}: {}'.format(path, k))
+            print('caution: missing keys from checkpoint {}: {}'.format(
+                path, k))
 
         if optimizer is not None:
             best_prec1 = checkpoint['best_prec1']
             last_iter = checkpoint['step']
             print(last_iter)
             optimizer.load_state_dict(checkpoint['optimizer'])
-            print("=> also loaded optimizer from checkpoint '{}' (iter {})"
-                  .format(path, last_iter))
+            print("=> also loaded optimizer from checkpoint '{}' (iter {})".
+                  format(path, last_iter))
             return best_prec1, last_iter
     else:
         print("=> no checkpoint found at '{}'".format(path))

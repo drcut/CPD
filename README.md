@@ -72,6 +72,12 @@ srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist 
 # Run ResNet18 for 8 bits (exp: 4bit man: 3bit) with APS
 srun -p Test --gres=gpu:8 -n8 --ntasks-per-node=8 python -u tools/mix.py --dist --grad_exp 4 --grad_man 3 --use_APS | tee aps.log
 
+'''
+If you only have 1 GPU, you can still run the example by using 1 GPU to emulate 8 GPUs
+python -u tools/mix.py --emulate_node 8 --grad_exp 4 --grad_man 3 --use_APS| tee aps.log
+python -u tools/mix.py --emulate_node 8 --grad_exp 4 --grad_man 3| tee no_aps.log
+'''
+
 # (Optional) Visualize the experiments results
 python draw_curve.py
 ```
