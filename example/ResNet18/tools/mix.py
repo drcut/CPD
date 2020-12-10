@@ -384,12 +384,12 @@ def validate(val_loader, model, criterion):
             output = model(input, -1)
 
         # measure accuracy and record loss
-        loss = criterion(output, target) / world_size
+        loss = criterion(output, target)
         prec1, prec5 = accuracy(output.float().data, target, topk=(1, 5))
 
         reduced_loss = loss.data.clone()
-        reduced_prec1 = prec1.clone() / world_size
-        reduced_prec5 = prec5.clone() / world_size
+        reduced_prec1 = prec1.clone() 
+        reduced_prec5 = prec5.clone() 
 
         if args.dist:
             hvd.allreduce_(reduced_loss)
