@@ -1,21 +1,11 @@
 import os
 import shutil
-from datetime import datetime
 import torch
 from torch.utils.data.sampler import Sampler
-import torch.distributed as dist
+import horovod.torch as hvd
 import math
 import numpy as np
 
-
-def simple_group_split(world_size, rank, num_groups):
-    groups = []
-    rank_list = np.split(np.arange(world_size), num_groups)
-    rank_list = [list(map(int, x)) for x in rank_list]
-    for i in range(num_groups):
-        groups.append(dist.new_group(ranks=rank_list[i]))
-    group_size = world_size // num_groups
-    return groups[rank // group_size]
 
 
 class AverageMeter(object):
@@ -165,11 +155,11 @@ class DistributedGivenIterationSampler(Sampler):
                  rank=None,
                  last_iter=-1):
         if world_size is None:
-            world_size = dist.get_world_size()
+            world_size = hvd.size()
         else:
             world_size = 1
         if rank is None:
-            rank = dist.get_rank()
+            rank = hvd.rank()
         else:
             rank = 0
         assert rank < world_size
@@ -225,9 +215,9 @@ class DistributedGivenIterationSampler(Sampler):
 class DistributedSampler(Sampler):
     def __init__(self, dataset, world_size=None, rank=None, round_up=True):
         if world_size is None:
-            world_size = dist.get_world_size()
+            world_size = hvd.size()
         if rank is None:
-            rank = dist.get_rank()
+            rank = hvd.rank()
         self.dataset = dataset
         self.world_size = world_size
         self.rank = rank

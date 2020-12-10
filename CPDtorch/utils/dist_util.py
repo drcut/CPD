@@ -1,6 +1,7 @@
 import os
 import torch
-import torch.distributed as dist
+import horovod.torch as hvd
+from horovod.torch.mpi_ops import Sum
 from torch.nn import Module
 from ..quant import float_quantize
 
@@ -21,13 +22,16 @@ class DistModule(Module):
 
 def sum_gradients(model, use_APS=False, grad_exp=5, grad_man=2, use_kahan=False):
     if use_APS:
-        world_size = dist.get_world_size()
+        world_size = hvd.size()
         max_exp = []
         for idx, param in enumerate(model.parameters()):
             max_exp.append(torch.log2(
                 torch.abs(param.grad.data * world_size).max()).ceil())
         max_exp = torch.Tensor(max_exp).cuda()
-        dist.all_reduce(max_exp, op=dist.reduce_op.MAX)
+        gather_t = hvd.torch.allgather_object(max_exp)
+        max_exp = gather_t[0]
+        for t in gather_t:
+            max_exp = torch.max(max_exp, t)
 
         upper_bound = 2**(grad_exp-1) - 1
         shift_factor = [upper_bound - exp.detach().cpu().numpy()
@@ -55,13 +59,11 @@ def normal_sum_gradients(model, grad_exp=8, grad_man=23):
     if grad_exp == 8 and grad_man == 23:
         for _, param in model.named_parameters():
             if param.requires_grad:
-                dist.all_reduce(param.grad.data)
+                hvd.torch.allreduce_(param.grad.data, op=Sum)
         return
     for param in model.parameters():
         if param.requires_grad:
-            gather_t = [torch.ones_like(param)
-                        for _ in range(dist.get_world_size())]
-            dist.all_gather(gather_t, param.grad.data)
+            gather_t = hvd.torch.allgather_object(param.grad.data)
             res = torch.zeros_like(param)
             for grad in gather_t:
                 res = float_quantize(res+grad, grad_exp, grad_man)
@@ -72,10 +74,7 @@ def normal_sum_gradients(model, grad_exp=8, grad_man=23):
 def kahan_sum_gradients(model, grad_exp=8, grad_man=23):
     for param in model.parameters():
         if param.requires_grad:
-            gather_t = [torch.ones_like(param)
-                        for _ in range(dist.get_world_size())]
-            dist.all_gather(gather_t, param.grad.data)
-
+            gather_t = hvd.torch.allgather_object(param.grad.data)
             # Using Kahan Accumulation algorithm
             res = torch.zeros_like(param)
             c = torch.zeros_like(param)
