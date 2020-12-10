@@ -75,6 +75,7 @@ def main():
         hvd.init()
         rank = hvd.rank()
         world_size = hvd.size()
+        torch.cuda.set_device(hvd.local_rank())
     else:
         rank = 0
         world_size = 1
@@ -86,8 +87,7 @@ def main():
     model.cuda()
 
     if args.dist:
-        for param in model.parameters():
-            broadcast(param, 0)
+        hvd.broadcast_parameters(model.state_dict(), root_rank=0)
 
     global model_params, master_params
     model_params, master_params = prep_param_lists(model)
