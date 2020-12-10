@@ -235,7 +235,7 @@ def train(train_loader, val_loader, model, criterion, optimizer, lr_scheduler,
         loss = criterion(output, target) / (world_size * emulate_node)
         reduced_loss = loss.data.clone()
         if args.dist:
-            hvd.torch.allreduce_(reduced_loss)
+            hvd.allreduce_(reduced_loss)
         losses.update(float(reduced_loss.item()))
         model.zero_grad()
         loss.backward()
@@ -390,9 +390,9 @@ def validate(val_loader, model, criterion):
         reduced_prec5 = prec5.clone() / world_size
 
         if args.dist:
-            hvd.torch.allreduce_(reduced_loss)
-            hvd.torch.allreduce_(reduced_prec1)
-            hvd.torch.allreduce_(reduced_prec5)
+            hvd.allreduce_(reduced_loss)
+            hvd.allreduce_(reduced_prec1)
+            hvd.allreduce_(reduced_prec5)
 
         losses.update(reduced_loss.item())
         top1.update(reduced_prec1.item())
