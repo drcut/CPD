@@ -28,7 +28,8 @@ def sum_gradients(model, use_APS=False, grad_exp=5, grad_man=2, use_kahan=False)
             max_exp.append(torch.log2(
                 torch.abs(param.grad.data * world_size).max()).ceil())
         max_exp = torch.Tensor(max_exp).cuda()
-        gather_t = hvd.allgather_object(max_exp)
+        max_exp = max_exp.unsqueeze(dim=0)
+        gather_t = hvd.allgather(max_exp)
         max_exp = gather_t[0]
         for t in gather_t:
             max_exp = torch.max(max_exp, t)
@@ -63,7 +64,8 @@ def normal_sum_gradients(model, grad_exp=8, grad_man=23):
         return
     for param in model.parameters():
         if param.requires_grad:
-            gather_t = hvd.allgather_object(param.grad.data)
+            param_data = param.grad.data.unsqueeze(dim=0)
+            gather_t = hvd.allgather(param_data)
             res = torch.zeros_like(param)
             for grad in gather_t:
                 res = float_quantize(res+grad, grad_exp, grad_man)
@@ -74,7 +76,8 @@ def normal_sum_gradients(model, grad_exp=8, grad_man=23):
 def kahan_sum_gradients(model, grad_exp=8, grad_man=23):
     for param in model.parameters():
         if param.requires_grad:
-            gather_t = hvd.allgather_object(param.grad.data)
+            param_data = param.grad.data.unsqueeze(dim=0)
+            gather_t = hvd.allgather(param_data)
             # Using Kahan Accumulation algorithm
             res = torch.zeros_like(param)
             c = torch.zeros_like(param)

@@ -18,6 +18,8 @@ from CPDtorch.quant import float_quantize
 import torchvision
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
+import torch.multiprocessing
+torch.multiprocessing.set_sharing_strategy('file_system')
 torch.manual_seed(24)
 
 model_names = sorted(name for name in models.__dict__
