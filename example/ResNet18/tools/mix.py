@@ -3,8 +3,8 @@ import math
 import argparse
 import time
 import yaml
-import sys
 import torch
+import horovod.torch as hvd
 import torch.nn as nn
 import torch.distributed as dist
 import torch.optim
@@ -14,8 +14,8 @@ from torch.distributed import broadcast
 import torchvision.transforms as transforms
 import models
 from tensorboardX import SummaryWriter
-from utils.train_util import AverageMeter, accuracy, save_checkpoint, load_state, IterLRScheduler, DistributedGivenIterationSampler, DistributedSampler, simple_group_split
-from CPDtorch.utils.dist_util import sum_gradients, dist_init, DistModule
+from utils.train_util import AverageMeter, accuracy, save_checkpoint, IterLRScheduler, DistributedGivenIterationSampler, DistributedSampler, simple_group_split
+from CPDtorch.utils.dist_util import sum_gradients, dist_init
 from CPDtorch.quant import float_quantize
 import torchvision
 import torchvision.transforms as transforms
@@ -72,7 +72,9 @@ def main():
         setattr(args, k, v)
 
     if args.dist:
-        rank, world_size = dist_init()
+        hvd.init()
+        rank = hvd.rank()
+        world_size = hvd.size()
     else:
         rank = 0
         world_size = 1
@@ -103,10 +105,6 @@ def main():
                                    last_iter=last_iter)
 
     # Data loading code
-    mean = [0.485, 0.456, 0.406]
-    std = [0.229, 0.224, 0.225]
-    normalize = transforms.Normalize(mean, std)
-
     transform_train = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
